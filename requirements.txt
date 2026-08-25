@@ -1,0 +1,9 @@
+# Core (always needed)
+rich>=13.0
+
+# Active Directory protocol stack (needed for the recon modules to hit a live target).
+# The framework core imports and runs without these; modules that need them
+# will tell you what to install.
+impacket>=0.11.0
+ldap3>=2.9
+dnspython>=2.3
