@@ -4,9 +4,21 @@ from adreaper.modules.adcs.esc_enum import (
     CERT_REQUEST_AGENT,
     CLIENT_AUTH,
     _is_low_priv,
+    assess_ca,
     assess_template,
     derive_ekus,
 )
+
+
+def test_esc7_ca_control():
+    hits = assess_ca({"low_priv_control": True, "name": "CORP-CA"})
+    assert [f["esc"] for f in hits] == ["ESC7"]
+    assert hits[0]["severity"] == "HIGH"
+
+
+def test_esc7_absent_when_no_low_priv_control():
+    assert assess_ca({"low_priv_control": False}) == []
+    assert assess_ca({}) == []
 
 
 def _tmpl(**kw):

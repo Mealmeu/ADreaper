@@ -9,10 +9,14 @@ are determinable from directory data:
 - ESC2  Any-Purpose (or no) EKU + low-priv enrollment
 - ESC3  Certificate Request Agent EKU + low-priv enrollment
 - ESC4  low-priv principals can *edit* the template ACL -> reshape into ESC1
+- ESC7  low-priv principals hold Write/Owner/GenericAll over the CA object
+        (the LDAP-visible foothold toward ManageCA / ManageCertificates)
 
 ESC6 (CA EDITF_ATTRIBUTESUBJECTALTNAME2) and ESC8 (web-enrollment NTLM relay)
-depend on CA registry/HTTP state that isn't in LDAP; the CAs are listed so an
-operator can check those out of band.
+depend on CA registry / HTTP state that isn't in LDAP, so each CA is listed with
+those flagged for an out-of-band check (e.g. `certipy find -vulnerable`). The
+canonical ESC7 rights (ManageCA / ManageCertificates) live in the CA's RPC
+security descriptor; the control detected here is the CA *object* DACL slice.
 """
 
 from __future__ import annotations
@@ -58,7 +62,7 @@ ACE_ALLOWED_OBJECT = 0x05
 
 class AdcsEscEnum(BaseModule):
     name = "adcs/esc_enum"
-    description = "Enumerate AD CS templates/CAs and flag ESC1-ESC4 misconfigurations."
+    description = "Enumerate AD CS templates/CAs and flag ESC1-ESC4/ESC7/ESC8 misconfigurations."
     author = "Mealmeu"
     category = "adcs"
     requires = ["ldap3", "impacket"]
@@ -107,7 +111,7 @@ class AdcsEscEnum(BaseModule):
         controls = security_descriptor_control(sdflags=0x04)  # DACL only
 
         # --- enrollment services (CAs) ---
-        cas, published = self._enum_cas(conn, pki_base, ctx, res, SUBTREE)
+        cas, published = self._enum_cas(conn, pki_base, ctx, res, SUBTREE, controls)
 
         # --- certificate templates ---
         tmpl_base = f"CN=Certificate Templates,{pki_base}"
@@ -123,13 +127,13 @@ class AdcsEscEnum(BaseModule):
 
     # -- CAs --------------------------------------------------------------
 
-    def _enum_cas(self, conn, pki_base, ctx, res, scope):
+    def _enum_cas(self, conn, pki_base, ctx, res, scope, controls):
         base = f"CN=Enrollment Services,{pki_base}"
-        attrs = ["cn", "dNSHostName", "certificateTemplates"]
+        attrs = ["cn", "dNSHostName", "certificateTemplates", "nTSecurityDescriptor"]
         cas, published = [], set()
         try:
             conn.search(base, "(objectClass=pKIEnrollmentService)", search_scope=scope,
-                        attributes=attrs)
+                        attributes=attrs, controls=controls)
         except Exception as e:
             log.warn("CA enumeration failed: %s", e)
             return cas, published
@@ -141,9 +145,13 @@ class AdcsEscEnum(BaseModule):
             host = _first(a.get("dNSHostName"))
             templ = _as_list(a.get("certificateTemplates"))
             published.update(t.lower() for t in templ)
-            cas.append({"name": name, "host": host, "templates": templ})
+            _, low_control, controllers = self._sd_rights(_raw(a.get("nTSecurityDescriptor")))
+            ca = {"name": name, "host": host, "templates": templ,
+                  "low_priv_control": low_control, "controllers": controllers}
+            cas.append(ca)
             ctx.graph.add_node(f"CA:{name}".upper(), NodeType.CA, name,
-                               {"host": host, "published_templates": templ})
+                               {"host": host, "published_templates": templ,
+                                "low_priv_control": low_control})
             res.add_finding(
                 f"Certificate Authority: {name} ({host})",
                 Severity.INFO,
@@ -151,6 +159,14 @@ class AdcsEscEnum(BaseModule):
                             "NTLM relay) against this CA out of band (e.g. certipy).",
                 target=host or name,
             )
+            for f in assess_ca(ca):
+                res.add_finding(
+                    f"AD CS {f['esc']}: CA '{name}' — {f['detail']}",
+                    Severity(f["severity"]),
+                    description=f["description"],
+                    target=host or name,
+                    references=["https://posts.specterops.io/certified-pre-owned-d95910965cd2"],
+                )
         return cas, published
 
     # -- templates --------------------------------------------------------
@@ -305,6 +321,20 @@ def assess_template(t: dict) -> list[dict]:
             "esc": "ESC3", "severity": "HIGH",
             "detail": "Certificate Request Agent EKU with low-priv enrollment",
             "description": "An enrollment-agent certificate lets the holder enroll on behalf of others.",
+        })
+    return findings
+
+
+def assess_ca(ca: dict) -> list[dict]:
+    """Return the ESC findings for one enrollment-service (CA) dict."""
+    findings: list[dict] = []
+    if ca.get("low_priv_control"):
+        findings.append({
+            "esc": "ESC7", "severity": "HIGH",
+            "detail": "low-privileged principals control the CA object",
+            "description": "A low-privileged principal holds Write/Owner/GenericAll over the CA "
+                           "object — a foothold toward ManageCA/ManageCertificates (ESC7), which "
+                           "can approve pending requests or enable SAN abuse.",
         })
     return findings
 

@@ -111,7 +111,9 @@ straight into the BloodHound GUI (`analysis/bloodhound_export`).
 - [x] ACL / delegation / RBCD / DCSync control edges (deeper attack paths)
 - [x] Session collection (HasSession) and local-admin (AdminTo) edges
 - [x] BloodHound-compatible graph export (SharpHound JSON + zip)
-- [x] AD CS (Certipy-style) ESC1–ESC4 template auditing
+- [x] AD CS (Certipy-style) ESC1–ESC4 template + ESC7 CA-object auditing
+- [x] Domain/forest trust enumeration (SID-filtering / RC4 risk, TRUSTS edges)
+- [x] GPP cpassword credential recovery from SYSVOL (MS14-025)
 - [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
 - [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 
