@@ -40,6 +40,7 @@ _ACE_RIGHT = {
     EdgeType.FORCE_CHANGE_PASSWORD: "ForceChangePassword",
     EdgeType.ADD_MEMBER: "AddMember",
     EdgeType.ALL_EXTENDED_RIGHTS: "AllExtendedRights",
+    EdgeType.READ_LAPS_PASSWORD: "ReadLAPSPassword",
 }
 
 _BH_TYPE = {
@@ -177,6 +178,8 @@ def _base_object(n: Node, domain: str, domain_sid: str) -> dict:
         props["dontreqpreauth"] = bool(n.properties.get("dont_require_preauth"))
         if n.properties.get("os"):
             props["operatingsystem"] = n.properties["os"]
+    if n.type == NodeType.COMPUTER:
+        props["haslaps"] = bool(n.properties.get("laps"))
     obj = {
         "ObjectIdentifier": n.id,
         "Properties": props,

@@ -114,6 +114,8 @@ straight into the BloodHound GUI (`analysis/bloodhound_export`).
 - [x] AD CS (Certipy-style) ESC1–ESC4 template + ESC7 CA-object auditing
 - [x] Domain/forest trust enumeration (SID-filtering / RC4 risk, TRUSTS edges)
 - [x] GPP cpassword credential recovery from SYSVOL (MS14-025)
+- [x] LAPS readable-password audit (ReadLAPSPassword edges)
+- [x] Styled HTML engagement report (alongside Markdown / JSON)
 - [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
 - [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 

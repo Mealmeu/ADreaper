@@ -52,6 +52,7 @@ class EdgeType(str, Enum):
     GP_LINK = "GpLink"
     CAN_RDP = "CanRDP"
     DC_SYNC = "DCSync"
+    READ_LAPS_PASSWORD = "ReadLAPSPassword"
 
 
 # Well-known privileged principal names, matched case-insensitively when a node
