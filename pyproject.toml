@@ -9,7 +9,7 @@ description = "A modern, modular Active Directory penetration-testing framework.
 readme = "README.md"
 requires-python = ">=3.9"
 license = { file = "LICENSE" }
-authors = [{ name = "ADreaper Contributors" }]
+authors = [{ name = "Mealmeu" }]
 keywords = ["active-directory", "pentest", "red-team", "security", "ldap", "smb", "kerberos"]
 classifiers = [
     "Development Status :: 3 - Alpha",

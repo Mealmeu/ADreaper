@@ -96,7 +96,8 @@ adreaper console
 ```
 
 Results and the collected graph land in `./adreaper_loot/<domain>/` as Markdown
-and JSON (BloodHound-compatible export is on the roadmap).
+and JSON, plus a SharpHound-style `<domain>_bloodhound.zip` you can upload
+straight into the BloodHound GUI (`analysis/bloodhound_export`).
 
 ## Roadmap
 
@@ -108,9 +109,11 @@ and JSON (BloodHound-compatible export is on the roadmap).
 - [x] Credential testing — lockout-safe spraying, pass-the-hash
 - [x] Automated attack-path finder (Domain Admin path search)
 - [x] ACL / delegation / RBCD / DCSync control edges (deeper attack paths)
-- [ ] Session collection (HasSession) and local-admin (AdminTo) edges
-- [ ] BloodHound-compatible graph export
-- [ ] AD CS (Certipy-style) module set
+- [x] Session collection (HasSession) and local-admin (AdminTo) edges
+- [x] BloodHound-compatible graph export (SharpHound JSON + zip)
+- [x] AD CS (Certipy-style) ESC1–ESC4 template auditing
+- [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
+- [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 
 ## Contributing
 

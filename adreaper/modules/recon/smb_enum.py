@@ -17,7 +17,7 @@ from adreaper.core.module import BaseModule, ModuleResult, Option, OptionType, S
 class SmbEnum(BaseModule):
     name = "recon/smb_enum"
     description = "Fingerprint a host over SMB, check signing, and list shares."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "recon"
     requires = ["impacket"]
     references = ["https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2/"]

@@ -52,7 +52,7 @@ SKIP_RIDS = {512, 516, 518, 519, 520}  # Domain/Enterprise/Schema Admins, DCs, G
 class AclEnum(BaseModule):
     name = "recon/acl_enum"
     description = "Collect ACL, delegation, RBCD and DCSync control edges into the graph."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "recon"
     requires = ["ldap3", "impacket"]
     references = [

@@ -17,7 +17,7 @@ from adreaper.core.module import BaseModule, ModuleResult, Option, OptionType, S
 class DnsEnum(BaseModule):
     name = "recon/dns_enum"
     description = "Locate domain controllers and services via AD DNS SRV records."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "recon"
     requires = ["dns"]  # dnspython
     references = ["https://learn.microsoft.com/windows-server/identity/ad-ds/"]

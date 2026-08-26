@@ -24,7 +24,7 @@ from adreaper.core.module import BaseModule, ModuleResult, Option, OptionType, S
 class PathFinder(BaseModule):
     name = "analysis/pathfinder"
     description = "Find shortest privilege-escalation paths to high-value targets."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "analysis"
     requires = []  # pure graph analysis, no external deps
     references = ["https://bloodhound.readthedocs.io/"]

@@ -4,7 +4,7 @@ Authorized security testing only. See DISCLAIMER.md.
 """
 
 __version__ = "0.1.0"
-__author__ = "ADreaper Contributors"
+__author__ = "Mealmeu"
 
 # Convenience re-exports for module authors.
 from adreaper.core.module import (  # noqa: E402,F401

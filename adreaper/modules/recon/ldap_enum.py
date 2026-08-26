@@ -34,7 +34,7 @@ HIGH_VALUE_SIDS = {"S-1-5-32-544", "S-1-5-32-548", "S-1-5-32-549", "S-1-5-32-551
 class LdapEnum(BaseModule):
     name = "recon/ldap_enum"
     description = "Enumerate users/groups/computers over LDAP and build the attack graph."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "recon"
     requires = ["ldap3"]
     references = [

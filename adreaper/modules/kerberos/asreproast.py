@@ -21,7 +21,7 @@ from adreaper.modules.kerberos.common import format_asrep_hash, crack_hint
 class AsRepRoast(BaseModule):
     name = "kerberos/asreproast"
     description = "Request AS-REP hashes for accounts without Kerberos pre-auth."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "kerberos"
     requires = ["impacket"]
     references = ["https://attack.mitre.org/techniques/T1558/004/"]

@@ -23,7 +23,7 @@ from adreaper.core.module import BaseModule, ModuleResult, Option, OptionType, S
 class PasswordSpray(BaseModule):
     name = "credentials/password_spray"
     description = "Lockout-aware password/hash spray across domain accounts (SMB)."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "credentials"
     requires = ["impacket"]
     references = ["https://attack.mitre.org/techniques/T1110/003/"]

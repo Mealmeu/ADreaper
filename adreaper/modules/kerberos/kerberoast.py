@@ -19,7 +19,7 @@ from adreaper.modules.kerberos.common import crack_hint, format_tgs_hash
 class Kerberoast(BaseModule):
     name = "kerberos/kerberoast"
     description = "Request TGS hashes for SPN-bearing service accounts."
-    author = "ADreaper Contributors"
+    author = "Mealmeu"
     category = "kerberos"
     requires = ["impacket"]
     references = ["https://attack.mitre.org/techniques/T1558/003/"]
