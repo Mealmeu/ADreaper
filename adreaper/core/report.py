@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,6 +35,84 @@ _SEV_COLOR = {
 
 def _esc(v) -> str:
     return html.escape(str(v), quote=True)
+
+
+# --- risk scoring ----------------------------------------------------------
+
+_SCORE_WEIGHT = {
+    Severity.CRITICAL: 40, Severity.HIGH: 15, Severity.MEDIUM: 6,
+    Severity.LOW: 1, Severity.INFO: 0,
+}
+
+
+def severity_counts(findings) -> dict:
+    by_sev = {s: 0 for s in _SEV_ORDER}
+    for f in findings:
+        by_sev[f.severity] = by_sev.get(f.severity, 0) + 1
+    return by_sev
+
+
+def risk_score(by_sev: dict) -> tuple[int, str]:
+    """Return (0-100 score, rating). Rating is the worst severity present; the
+    score is a capped weighted magnitude conveying breadth of exposure."""
+    score = min(100, sum(_SCORE_WEIGHT[s] * by_sev.get(s, 0) for s in _SEV_ORDER))
+    if by_sev.get(Severity.CRITICAL):
+        rating = "Critical"
+    elif by_sev.get(Severity.HIGH):
+        rating = "High"
+    elif by_sev.get(Severity.MEDIUM):
+        rating = "Medium"
+    elif by_sev.get(Severity.LOW):
+        rating = "Low"
+    else:
+        rating = "Hardened"
+    return score, rating
+
+
+# --- MITRE ATT&CK coverage -------------------------------------------------
+
+_ATTACK_RE = re.compile(r"attack\.mitre\.org/techniques/(T\d{4})(?:/(\d{3}))?", re.I)
+
+# techniques the ADreaper modules cite, id -> (name, tactic)
+ATTACK_TECHNIQUES = {
+    "T1049": ("System Network Connections Discovery", "Discovery"),
+    "T1069.001": ("Permission Groups Discovery: Local Groups", "Discovery"),
+    "T1087.002": ("Account Discovery: Domain Account", "Discovery"),
+    "T1482": ("Domain Trust Discovery", "Discovery"),
+    "T1110.003": ("Brute Force: Password Spraying", "Credential Access"),
+    "T1003.006": ("OS Credential Dumping: DCSync", "Credential Access"),
+    "T1558": ("Steal or Forge Kerberos Tickets", "Credential Access"),
+    "T1558.003": ("Kerberoasting", "Credential Access"),
+    "T1558.004": ("AS-REP Roasting", "Credential Access"),
+    "T1552": ("Unsecured Credentials", "Credential Access"),
+    "T1552.006": ("Unsecured Credentials: Group Policy Preferences", "Credential Access"),
+    "T1222.001": ("File and Directory Permissions Modification: Windows", "Defense Evasion"),
+    "T1484.001": ("Domain Policy Modification: GPO", "Privilege Escalation"),
+    "T1134.005": ("Access Token Manipulation: SID-History Injection", "Privilege Escalation"),
+}
+
+
+def _extract_attack_ids(references) -> set:
+    ids = set()
+    for ref in references or []:
+        m = _ATTACK_RE.search(str(ref))
+        if m:
+            ids.add(f"{m.group(1)}.{m.group(2)}" if m.group(2) else m.group(1))
+    return ids
+
+
+def attack_coverage(findings) -> list[dict]:
+    """Aggregate ATT&CK techniques cited by findings into a coverage table."""
+    counts: dict[str, int] = {}
+    for f in findings:
+        for tid in _extract_attack_ids(getattr(f, "references", None)):
+            counts[tid] = counts.get(tid, 0) + 1
+    rows = []
+    for tid, n in counts.items():
+        name, tactic = ATTACK_TECHNIQUES.get(tid, ("(unmapped technique)", "Other"))
+        rows.append({"id": tid, "name": name, "tactic": tactic, "count": n})
+    rows.sort(key=lambda r: (r["tactic"], r["id"]))
+    return rows
 
 
 _CSS = """
@@ -69,6 +148,14 @@ pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow-x:auto;f
 .log th{text-align:left;color:var(--mut);border-bottom:1px solid var(--line);padding:6px 8px;}
 .log td{padding:6px 8px;border-bottom:1px solid var(--line);}
 .log .ok{color:#2e8b57;}.log .bad{color:#c0392b;}
+.score{display:flex;align-items:baseline;gap:14px;background:var(--card);border:1px solid var(--line);
+border-left:5px solid var(--c);border-radius:8px;padding:16px 20px;margin:6px 0;flex-wrap:wrap;}
+.score .big{font-size:2.4rem;font-weight:800;color:var(--c);line-height:1;}
+.score .rate{font-size:1.1rem;font-weight:700;color:var(--c);}
+.score .ctx{color:var(--mut);font-size:.9rem;}
+.atk th{text-align:left;color:var(--mut);border-bottom:1px solid var(--line);padding:6px 8px;font-size:.85rem;}
+.atk td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:.9rem;}
+.atk code{font-size:.85em;}
 footer{margin-top:40px;color:var(--mut);font-size:.8rem;text-align:center;
 border-top:1px solid var(--line);padding-top:16px;}
 """
@@ -109,9 +196,14 @@ class Report:
 
         # Findings summary table
         findings = self._all_findings()
-        by_sev: dict[Severity, int] = {s: 0 for s in _SEV_ORDER}
-        for f in findings:
-            by_sev[f.severity] = by_sev.get(f.severity, 0) + 1
+        by_sev = severity_counts(findings)
+        score, rating = risk_score(by_sev)
+        lines.append("## Risk score")
+        lines.append("")
+        lines.append(f"**{score}/100 — {rating}** "
+                     f"({sum(by_sev.values())} finding{'s' if sum(by_sev.values()) != 1 else ''} "
+                     "across the assessment)")
+        lines.append("")
         lines.append("## Findings summary")
         lines.append("")
         lines.append("| Severity | Count |")
@@ -119,6 +211,18 @@ class Report:
         for s in _SEV_ORDER:
             lines.append(f"| {_SEV_EMOJI[s]} {s.value} | {by_sev.get(s, 0)} |")
         lines.append("")
+
+        # MITRE ATT&CK coverage
+        coverage = attack_coverage(findings)
+        if coverage:
+            lines.append("## MITRE ATT&CK coverage")
+            lines.append("")
+            lines.append("| Tactic | Technique | ID | Findings |")
+            lines.append("|--------|-----------|----|----------|")
+            for row in coverage:
+                lines.append(f"| {row['tactic']} | {row['name']} | "
+                             f"`{row['id']}` | {row['count']} |")
+            lines.append("")
 
         # Graph stats
         counts = ctx.graph.counts()
@@ -166,11 +270,18 @@ class Report:
         return "\n".join(lines)
 
     def to_json(self, ctx: EngagementContext) -> dict:
+        findings = self._all_findings()
+        by_sev = severity_counts(findings)
+        score, rating = risk_score(by_sev)
         return {
             "domain": ctx.domain,
             "target": ctx.primary_target(),
             "identity": ctx.credential.display(),
             "generated_utc": datetime.now(timezone.utc).isoformat(),
+            "risk_score": score,
+            "risk_rating": rating,
+            "severity_counts": {s.value: by_sev.get(s, 0) for s in _SEV_ORDER},
+            "attack_coverage": attack_coverage(findings),
             "graph_counts": ctx.graph.counts(),
             "results": [r.to_dict() for r in self.results],
         }
@@ -179,9 +290,13 @@ class Report:
         """Render a self-contained, styled HTML report (no external assets)."""
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         findings = self._all_findings()
-        by_sev: dict[Severity, int] = {s: 0 for s in _SEV_ORDER}
-        for f in findings:
-            by_sev[f.severity] = by_sev.get(f.severity, 0) + 1
+        by_sev = severity_counts(findings)
+        score, rating = risk_score(by_sev)
+        rating_color = {"Critical": _SEV_COLOR[Severity.CRITICAL],
+                        "High": _SEV_COLOR[Severity.HIGH],
+                        "Medium": _SEV_COLOR[Severity.MEDIUM],
+                        "Low": _SEV_COLOR[Severity.LOW],
+                        "Hardened": "#2e8b57"}.get(rating, _SEV_COLOR[Severity.INFO])
 
         p: list[str] = []
         p.append("<!doctype html><html lang='en'><head><meta charset='utf-8'>")
@@ -204,6 +319,15 @@ class Report:
             p.append(f"<tr><th>{_esc(k)}</th><td>{_esc(v)}</td></tr>")
         p.append("</table></section>")
 
+        # risk score hero
+        total = sum(by_sev.values())
+        p.append("<section><h2>Risk score</h2>")
+        p.append(f"<div class='score' style='--c:{rating_color}'>"
+                 f"<span class='big'>{score}</span><span class='ctx'>/ 100</span>"
+                 f"<span class='rate'>{_esc(rating)}</span>"
+                 f"<span class='ctx'>{total} finding{'s' if total != 1 else ''} "
+                 "across the assessment</span></div></section>")
+
         # severity summary cards
         p.append("<section><h2>Findings summary</h2><div class='cards'>")
         for s in _SEV_ORDER:
@@ -213,6 +337,18 @@ class Report:
                 f"<div class='lbl'>{_esc(s.value)}</div></div>"
             )
         p.append("</div></section>")
+
+        # MITRE ATT&CK coverage
+        coverage = attack_coverage(findings)
+        if coverage:
+            p.append("<section><h2>MITRE ATT&amp;CK coverage</h2><table class='atk'>")
+            p.append("<thead><tr><th>Tactic</th><th>Technique</th><th>ID</th>"
+                     "<th>Findings</th></tr></thead><tbody>")
+            for row in coverage:
+                p.append(f"<tr><td>{_esc(row['tactic'])}</td><td>{_esc(row['name'])}</td>"
+                         f"<td><code>{_esc(row['id'])}</code></td>"
+                         f"<td>{row['count']}</td></tr>")
+            p.append("</tbody></table></section>")
 
         # graph stats
         if len(ctx.graph):
