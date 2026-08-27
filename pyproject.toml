@@ -32,18 +32,20 @@ ad = [
     "impacket>=0.11.0",
     "ldap3>=2.9",
     "dnspython>=2.3",
+    "cryptography>=41.0",
 ]
 dev = [
     "pytest>=7.0",
     "ruff>=0.1",
+    "cryptography>=41.0",   # exercised by the offline GPP cpassword tests
 ]
 
 [project.scripts]
 adreaper = "adreaper.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ADreaper/ADreaper"
-Issues = "https://github.com/ADreaper/ADreaper/issues"
+Homepage = "https://github.com/Mealmeu/ADreaper"
+Issues = "https://github.com/Mealmeu/ADreaper/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
