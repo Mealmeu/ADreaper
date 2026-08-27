@@ -116,6 +116,7 @@ straight into the BloodHound GUI (`analysis/bloodhound_export`).
 - [x] GPP cpassword credential recovery from SYSVOL (MS14-025)
 - [x] LAPS readable-password audit (ReadLAPSPassword edges)
 - [x] Styled HTML engagement report (alongside Markdown / JSON)
+- [x] Attack-graph diagram export (Mermaid + Graphviz DOT)
 - [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
 - [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 
