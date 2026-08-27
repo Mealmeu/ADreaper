@@ -117,6 +117,7 @@ straight into the BloodHound GUI (`analysis/bloodhound_export`).
 - [x] LAPS readable-password audit (ReadLAPSPassword edges)
 - [x] Styled HTML engagement report (alongside Markdown / JSON)
 - [x] Attack-graph diagram export (Mermaid + Graphviz DOT)
+- [x] GPO enumeration — GpLink edges + GPO-edit hijack detection
 - [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
 - [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 
