@@ -11,6 +11,7 @@ env/
 
 # ADreaper output / engagement data (never commit loot)
 adreaper_loot/
+demo_loot/
 *.adreaper.json
 .adreaper_state.json
 

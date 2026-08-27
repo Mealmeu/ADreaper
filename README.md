@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Mealmeu/ADreaper/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Mealmeu/ADreaper/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="python" src="https://img.shields.io/badge/python-3.9%2B-blue">
   <img alt="platform" src="https://img.shields.io/badge/platform-linux%20%7C%20windows%20%7C%20macos-lightgrey">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-green">
@@ -98,6 +99,16 @@ adreaper console
 Results and the collected graph land in `./adreaper_loot/<domain>/` as Markdown
 and JSON, plus a SharpHound-style `<domain>_bloodhound.zip` you can upload
 straight into the BloodHound GUI (`analysis/bloodhound_export`).
+
+### See the output without a domain
+
+No AD handy? Build a representative engagement offline and render every
+artifact (HTML/Markdown report with risk score + MITRE ATT&CK matrix, attack
+graph, Mermaid/DOT diagrams, BloodHound zip):
+
+```bash
+python examples/demo.py            # writes ./demo_loot/corp.local/
+```
 
 ## Roadmap
 
