@@ -70,10 +70,50 @@ ctx.graph.add_edge(uid, gid, EdgeType.MEMBER_OF)
 `add_node` upserts by id (use the objectSid when you have it), so multiple
 modules can enrich the same node.
 
+## Keep the decision logic testable (the ADreaper pattern)
+
+Network I/O can't run in CI, but the *interesting* part of a module — how it
+decides a template is ESC1, which principals can read LAPS, how a gPLink parses —
+can and should. Every module keeps that logic in **pure module-level functions**
+that take plain data and return plain data, and lets `run()` be a thin shell that
+only does the LDAP/SMB call and hands the raw structures to those functions:
+
+```python
+def assess_template(t: dict) -> list[dict]:      # pure: dict in, findings out
+    ...
+
+class EscEnum(BaseModule):
+    def run(self, ctx):
+        res = self.result()
+        for tmpl in self._read_templates(ctx):   # the only part that needs the network
+            for f in assess_template(tmpl):       # pure, unit-tested
+                res.add_finding(f["title"], Severity(f["severity"]), ...)
+        return res.finish()
+```
+
+The unit tests then call `assess_template({...})` directly — no domain required.
+See `assess_template` / `assess_ca` (adcs), `can_read_laps` (laps_enum),
+`parse_gplink` (gpo_enum), `assess_trust` (trust_enum), `decrypt_cpassword`
+(gpp_decrypt) and their tests for the shape to copy.
+
+## Cite MITRE ATT&CK
+
+Put the relevant `https://attack.mitre.org/techniques/T....` URLs in a finding's
+`references`. The report parses them into a coverage matrix (tactic / technique /
+count), so honest references make the whole engagement report richer for free.
+
 ## Testing
 
-Put unit tests under `tests/`. Keep them offline — mock or avoid live network.
-Framework-level tests (graph, options, reporting) already exist as examples.
+Put unit tests under `tests/`, one file per module (`test_<module>.py`). Keep them
+**offline** — exercise the pure functions above; never touch a live network. Add a
+`test_module_discovered` assertion so a typo in `name` fails loudly:
+
+```python
+def test_module_discovered():
+    assert "recon/my_module" in loader.discover(force=True)
+```
+
+Run the suite (CI runs exactly this on Python 3.10–3.12):
 
 ```bash
 python -m pytest -q

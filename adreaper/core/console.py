@@ -26,6 +26,7 @@ _GLOBAL_KEYS = {"domain", "dc-ip", "dc_ip", "target", "username", "password",
 _HELP = """
 commands:
   list [category]        list modules (optionally filtered by category)
+  search <term>          find modules by name / description / category
   use <module>           select a module
   info [module]          show module details (current module if omitted)
   options                show current module options and engagement settings
@@ -39,6 +40,18 @@ commands:
   help                   this help
   exit / quit            leave
 """
+
+
+def search_modules(modules, term: str) -> list:
+    """Return module classes whose name / description / category contains `term`
+    (case-insensitive), sorted by name. Pure — no I/O."""
+    t = (term or "").lower().strip()
+    if not t:
+        return []
+    hits = [m for m in modules
+            if t in m.name.lower() or t in (m.description or "").lower()
+            or t in (m.category or "").lower()]
+    return sorted(hits, key=lambda m: m.name)
 
 
 class Console:
@@ -76,6 +89,7 @@ class Console:
         handler = {
             "help": self._help, "?": self._help,
             "list": self._list, "show": self._list,
+            "search": self._search,
             "use": self._use, "info": self._info,
             "options": self._options, "set": self._set, "unset": self._unset,
             "run": self._run, "exploit": self._run,
@@ -107,6 +121,20 @@ class Console:
             print(f"\n{cat}")
             for m in mods:
                 print(f"  {m.name:<24} {m.description}")
+        print()
+
+    def _search(self, rest) -> None:
+        if not rest:
+            log.error("usage: search <term>")
+            return
+        term = " ".join(rest)
+        hits = search_modules(loader.all_modules().values(), term)
+        if not hits:
+            log.info("no modules match %r", term)
+            return
+        print()
+        for m in hits:
+            print(f"  {m.name:<26} {m.description}")
         print()
 
     def _use(self, rest) -> None:
