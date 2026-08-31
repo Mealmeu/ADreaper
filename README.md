@@ -131,7 +131,7 @@ python examples/demo.py            # writes ./demo_loot/corp.local/
 - [x] GPO enumeration — GpLink edges + GPO-edit hijack detection
 - [x] Targeted DCSync secret extraction (DRSUAPI) to prove impact
 - [x] S4U / RBCD delegation-abuse planner (emits ready-to-run getST commands)
-- [ ] Kerberos ticket forging (golden / silver tickets)
+- [x] Golden / silver Kerberos ticket forging (offline, via impacket ticketer)
 
 ## Contributing
 
