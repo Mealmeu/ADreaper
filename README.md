@@ -129,8 +129,8 @@ python examples/demo.py            # writes ./demo_loot/corp.local/
 - [x] Styled HTML engagement report (alongside Markdown / JSON)
 - [x] Attack-graph diagram export (Mermaid + Graphviz DOT)
 - [x] GPO enumeration — GpLink edges + GPO-edit hijack detection
+- [x] Targeted DCSync secret extraction (DRSUAPI) to prove impact
 - [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
-- [ ] DCSync secret extraction (drsuapi) once a control edge is proven
 
 ## Contributing
 
