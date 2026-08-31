@@ -130,7 +130,8 @@ python examples/demo.py            # writes ./demo_loot/corp.local/
 - [x] Attack-graph diagram export (Mermaid + Graphviz DOT)
 - [x] GPO enumeration — GpLink edges + GPO-edit hijack detection
 - [x] Targeted DCSync secret extraction (DRSUAPI) to prove impact
-- [ ] Kerberos ticket ops — S4U / RBCD abuse, ticket forging
+- [x] S4U / RBCD delegation-abuse planner (emits ready-to-run getST commands)
+- [ ] Kerberos ticket forging (golden / silver tickets)
 
 ## Contributing
 
